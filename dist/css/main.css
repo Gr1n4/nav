@@ -1,0 +1,72 @@
+* {
+	margin: 0;
+	padding: 0;
+}
+
+html,
+body {
+	height: 100%;
+	width: 100%;
+}
+
+body {
+	-webkit-font-smoothing: anialiased;
+	background: url(../bg.jpg);
+	background-position: center;
+	-webkit-background-size: cover;
+	background-size: cover;
+	overflow: hidden;
+	cursor: pointer;
+}
+
+.hide {
+	display: none;
+}
+
+.radialnav {
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	-o-user-select: none;
+	user-select: none;
+}
+
+.radialnav-sector {
+	fill: rgba(255,255,255,.3);
+	stroke: rgba(255,255,255,.1);
+	stroke-width: 1;
+	-webkit-transition: all .4s;
+	-o-transition: all .4s;
+	transition: all .4s;
+}
+
+.radialnav-sector.active {
+	fill: rgba(255,255,255,.9);
+}
+
+.radialnav-icon {
+	pointer-events: none;
+	fill: #eee;
+	-webkit-transition: all .4s;
+	-o-transition: all .4s;
+	transition: all .4s;
+}
+
+.radialnav-icon.active {
+	fill: #333;
+}
+
+.radialnav-hint {
+	fill: #eee;
+	font: bold. 95em 'PT Sans', Arial, sans-serif;
+	text-anchor: middle;
+	text-transform: uppercase;
+	-webkit-transition: all .4s;
+	-o-transition: all .4s;
+	transition: all .4s;
+	opacity: 0;
+}
+
+.radialnav-hint.active {
+	opacity: 1;
+}
