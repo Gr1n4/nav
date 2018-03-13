@@ -3,6 +3,9 @@
 
   iconsPath = 'icons.svg';
 
+  // =======================================
+  // Util
+  // =======================================
   Snap.plugin(function(Snap, Element) {
     return Element.prototype.hover = function(f_in, f_out, s_in, s_out) {
       return this.mouseover(f_in, s_in).mouseout(f_out || f_in, s_out || s_in);
@@ -10,7 +13,7 @@
   });
 
   polarToCartesian = function(cx, cy, r, angle) {
-    angle = (angle - 90) * Math.PI / 180;
+    angle = (angle - 90) * Math.PI / 180; // Degrees to radians
     return {
       x: cx + r * Math.cos(angle),
       y: cy + r * Math.sin(angle)
@@ -23,11 +26,11 @@
     end = polarToCartesian(x, y, r, endAngle %= 360);
     large = Math.abs(endAngle - startAngle) >= 180;
     alter = endAngle > startAngle;
-    return "" + (continueLine ? 'L' : 'M') + start.x + "," + start.y + " A" + r + "," + r + ",0, " + (large ? 1 : 0) + ", " + (alter ? 1 : 0) + "," + end.x + "," + end.y;
+    return `${(continueLine ? 'L' : 'M')}${start.x},${start.y} A${r},${r},0, ${(large ? 1 : 0)}, ${(alter ? 1 : 0)},${end.x},${end.y}`;
   };
 
   describeSector = function(x, y, r, r2, startAngle, endAngle) {
-    return (describeArc(x, y, r, startAngle, endAngle)) + " " + (describeArc(x, y, r2, endAngle, startAngle, true)) + "Z";
+    return `${describeArc(x, y, r, startAngle, endAngle)} ${describeArc(x, y, r2, endAngle, startAngle, true)}Z`;
   };
 
   random = function(min, max) {
@@ -42,40 +45,43 @@
     return obj.animation[index] = Snap.animate(start, end, fn, duration, easing, cb);
   };
 
-  GUI = (function() {
-    function GUI(buttons) {
+  // =======================================
+  // GUI
+  // =======================================
+  GUI = class GUI {
+    constructor(buttons) {
       this.paper = Snap(window.innerWidth, window.innerHeight);
-      Snap.load(iconsPath, (function(_this) {
-        return function(icons) {
-          _this.nav = new RadialNav(_this.paper, buttons, icons);
-          return _this._bindEvents();
-        };
-      })(this));
+      Snap.load(iconsPath, (icons) => {
+        this.nav = new RadialNav(this.paper, buttons, icons);
+        return this._bindEvents();
+      });
     }
 
-    GUI.prototype._bindEvents = function() {
-      window.addEventListener('resize', (function(_this) {
-        return function() {
-          return _this.paper.attr({
-            width: window.innerWidth,
-            heigth: window.innerHeight
-          });
-        };
-      })(this));
+    // =====================
+    // Private
+    // =====================
+    _bindEvents() {
+      window.addEventListener('resize', () => {
+        return this.paper.attr({
+          width: window.innerWidth,
+          heigth: window.innerHeight
+        });
+      });
       this.paper.node.addEventListener('mousedown', this.nav.show.bind(this.nav));
       return this.paper.node.addEventListener('mouseup', this.nav.hide.bind(this.nav));
-    };
+    }
 
-    return GUI;
+  };
 
-  })();
-
-  RadialNav = (function() {
-    function RadialNav(paper, buttons, icons) {
+  // =========================================
+  // RadialNav
+  // =========================================
+  RadialNav = class RadialNav {
+    constructor(paper, buttons, icons) {
       this.area = paper.svg(0, 0, this.size = 500, this.size).addClass('radialnav');
-      this.c = this.size / 2;
-      this.r = this.size * .25;
-      this.r2 = this.r * .35;
+      this.c = this.size / 2; //Center
+      this.r = this.size * .25; //Outer radius
+      this.r2 = this.r * .35; //Inner Radius
       this.angle = 360 / buttons.length;
       this.animDuration = 300;
       this.container = this.area.g();
@@ -83,23 +89,22 @@
       this.updateButtons(buttons, icons);
     }
 
-    RadialNav.prototype._animateContainer = function(start, end, duration, easing) {
-      return animate(this, 0, start, end, duration, easing, (function(_this) {
-        return function(val) {
-          return _this.container.transform("r" + (90 - 90 * val) + "," + _this.c + "," + _this.c + "s" + val + "," + val + "," + _this.c + "," + _this.c);
-        };
-      })(this));
-    };
+    // ====================
+    // Private
+    // ====================
+    _animateContainer(start, end, duration, easing) {
+      return animate(this, 0, start, end, duration, easing, (val) => {
+        return this.container.transform(`r${90 - 90 * val},${this.c},${this.c}s${val},${val},${this.c},${this.c}`);
+      });
+    }
 
-    RadialNav.prototype._animateButtons = function(start, end, min, max, easing) {
+    _animateButtons(start, end, min, max, easing) {
       var anim, el, i, ref, results;
-      anim = (function(_this) {
-        return function(i, el) {
-          return animate(el, 0, start, end, random(min, max), easing, function(val) {
-            return el.transform("r" + (_this.angle * i) + "," + _this.c + "," + _this.c + "s" + val + "," + val + "," + _this.c + "," + _this.c);
-          });
-        };
-      })(this);
+      anim = (i, el) => {
+        return animate(el, 0, start, end, random(min, max), easing, (val) => {
+          return el.transform(`r${this.angle * i},${this.c},${this.c}s${val},${val},${this.c},${this.c}`);
+        });
+      };
       ref = this.container;
       results = [];
       for (i in ref) {
@@ -109,31 +114,29 @@
         }
       }
       return results;
-    };
+    }
 
-    RadialNav.prototype._animateButtonHover = function(button, start, end, duration, easing, cb) {
-      return animate(button, 1, start, end, duration, easing, ((function(_this) {
-        return function(val) {
-          button[0].attr({
-            d: describeSector(_this.c, _this.c, _this.r - val * 10, _this.r2, 0, _this.angle)
-          });
-          return button[2].transform("s" + (1.1 - val * .1) + "," + (1.1 - val * .1) + "," + _this.c + "," + _this.c);
-        };
-      })(this)), cb);
-    };
+    _animateButtonHover(button, start, end, duration, easing, cb) {
+      return animate(button, 1, start, end, duration, easing, ((val) => {
+        button[0].attr({
+          d: describeSector(this.c, this.c, this.r - val * 10, this.r2, 0, this.angle)
+        });
+        return button[2].transform(`s${1.1 - val * .1},${1.1 - val * .1},${this.c},${this.c}`);
+      }), cb);
+    }
 
-    RadialNav.prototype._sector = function() {
+    _sector() {
       return this.area.path(describeSector(this.c, this.c, this.r, this.r2, 0, this.angle)).addClass('radialnav-sector');
-    };
+    }
 
-    RadialNav.prototype._icon = function(btn, icons) {
+    _icon(btn, icons) {
       var bbox, icon;
-      icon = icons.select("#" + btn.icon).addClass('radialnav-icon');
+      icon = icons.select(`#${btn.icon}`).addClass('radialnav-icon');
       bbox = icon.getBBox();
-      return icon.transform("T" + (this.c - bbox.x - bbox.width / 2) + "," + (this.c - this.r + this.r2 - bbox.y - bbox.height / 2 - 5) + " R" + (this.angle / 2) + "," + this.c + "," + this.c + "s.7");
-    };
+      return icon.transform(`T${this.c - bbox.x - bbox.width / 2},${this.c - this.r + this.r2 - bbox.y - bbox.height / 2 - 5} R${this.angle / 2},${this.c},${this.c}s.7`);
+    }
 
-    RadialNav.prototype._hint = function(btn) {
+    _hint(btn) {
       var hint;
       hint = this.area.text(0, 0, btn.icon).addClass('radialnav-hint hide').attr({
         textpath: describeArc(this.c, this.c, this.r, 0, this.angle)
@@ -142,9 +145,9 @@
         startOffset: '50%'
       });
       return hint;
-    };
+    }
 
-    RadialNav.prototype._button = function(btn, sector, icon, hint) {
+    _button(btn, sector, icon, hint) {
       return this.area.g(sector, icon, hint).hover(function() {
         var el, j, len, ref, results;
         ref = [this[0], this[1], this[2]];
@@ -155,24 +158,27 @@
         }
         return results;
       }).hover(this._buttonOver(this), this._buttonOut(this));
-    };
+    }
 
-    RadialNav.prototype._buttonOver = function(nav) {
+    _buttonOver(nav) {
       return function() {
         nav._animateButtonHover(this, 0, 1, 200, mina.easeinout);
         return this[2].removeClass('hide');
       };
-    };
+    }
 
-    RadialNav.prototype._buttonOut = function(nav) {
+    _buttonOut(nav) {
       return function() {
         return nav._animateButtonHover(this, 1, 0, 2000, mina.elastic, (function() {
           return this.addClass('hide');
         }).bind(this[2]));
       };
-    };
+    }
 
-    RadialNav.prototype.updateButtons = function(buttons, icons) {
+    // ====================
+    // Public
+    // ====================
+    updateButtons(buttons, icons) {
       var btn, i, j, len, results;
       this.container.clear();
       results = [];
@@ -181,43 +187,47 @@
         results.push(this.container.add(this._button(btn, this._sector(), this._icon(btn, icons), this._hint(btn))));
       }
       return results;
-    };
+    }
 
-    RadialNav.prototype.show = function(e) {
+    show(e) {
       this.area.attr({
         x: e.clientX - this.c,
         y: e.clientY - this.c
       });
       this._animateContainer(0, 1, this.animDuration * 8, mina.elastic);
       return this._animateButtons(0, 1, this.animDuration, this.animDuration * 8, mina.elastic);
-    };
+    }
 
-    RadialNav.prototype.hide = function() {
+    hide() {
       this._animateContainer(1, 0, this.animDuration, mina.easeinout);
       return this._animateButtons(1, 0, this.animDuration, this.animDuration, mina.easeinout);
-    };
+    }
 
-    return RadialNav;
+  };
 
-  })();
-
+  // =========================================
+  // Test
+  // =========================================
   gui = new GUI([
     {
       icon: 'add',
       action: function() {
         return console.log('add');
       }
-    }, {
+    },
+    {
       icon: 'analys',
       action: function() {
         return console.log('analys');
       }
-    }, {
+    },
+    {
       icon: 'edit',
       action: function() {
         return console.log('edit');
       }
-    }, {
+    },
+    {
       icon: 'show',
       action: function() {
         return console.log('show');
